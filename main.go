@@ -37,6 +37,8 @@ func main() {
 		}
 
 		fmt.Printf("\nwrote %d bytes\n", n)
+	} else {
+		flag.Usage()
 	}
 }
 
