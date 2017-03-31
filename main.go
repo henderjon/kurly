@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -19,6 +20,8 @@ func main() {
 	flag.Visit(func(f *flag.Flag) { flagset[f.Name] = true })
 
 	if flagset["url"] && flagset["out"] {
+		go spinner(100 * time.Millisecond)
+
 		f, err := os.Create(*out)
 		defer f.Close()
 
@@ -33,6 +36,15 @@ func main() {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("wrote %d bytes\n", n)
+		fmt.Printf("\nwrote %d bytes\n", n)
+	}
+}
+
+func spinner(delay time.Duration) {
+	for {
+		for _, r := range `-\|/` {
+			fmt.Printf("\r%c", r)
+			time.Sleep(delay)
+		}
 	}
 }
