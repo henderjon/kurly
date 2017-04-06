@@ -1,17 +1,15 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/mitchellh/ioprogress"
+	"github.com/urfave/cli"
 )
 
 var (
@@ -30,26 +28,32 @@ func testForStdoutRedirect() {
 	}
 }
 
+var outputFile string
+var url string
+
 func main() {
-	o := flag.String("o", "", "output file")
-
-	flag.Parse()
-
-	flagset := make(map[string]bool)
-	flag.Visit(func(f *flag.Flag) { flagset[f.Name] = true })
-
-	// get the first non flag argument
-	target := flag.Arg(0)
-	if _, err := url.Parse(target); err != nil || !strings.HasPrefix(target, "http") || flag.NArg() > 1 {
-		flag.Usage()
-		os.Exit(1)
+	app := cli.NewApp()
+	app.Name = "working-title"
+	app.Usage = "[options] <URL>"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "output, o",
+			Usage:       "output filename",
+			Destination: &outputFile,
+		},
+		cli.StringFlag{
+			Name:        "url",
+			Usage:       "URL",
+			Destination: &url,
+		},
 	}
 
-	if flagset["o"] {
+	app.Run(os.Args)
+
+	if outputFile != "" {
 		var err error
-		Output, err = os.Create(*o)
+		Output, err = os.Create(outputFile)
 		if err != nil {
-			flag.Usage()
 			Status.Fatalln(err)
 		}
 		defer Output.Close()
@@ -57,7 +61,7 @@ func main() {
 
 	testForStdoutRedirect()
 
-	resp, err := http.Get(target)
+	resp, err := http.Get(url)
 	if err != nil {
 		Status.Fatal(err)
 	}
