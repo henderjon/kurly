@@ -29,26 +29,30 @@ func testForStdoutRedirect() {
 }
 
 var outputFile string
-var url string
+var target string
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "working-title"
-	app.Usage = "[options] <URL>"
+	app.Usage = "[options] URL"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "output, o",
 			Usage:       "output filename",
 			Destination: &outputFile,
 		},
-		cli.StringFlag{
-			Name:        "url",
-			Usage:       "URL",
-			Destination: &url,
-		},
 	}
 
 	app.Run(os.Args)
+
+	app.Action = func(c *cli.Context) error {
+		if c.NArg() > 0 {
+			target = c.Args()[0]
+		} else {
+			fmt.Println("URL required")
+		}
+		return nil
+	}
 
 	if outputFile != "" {
 		var err error
@@ -61,7 +65,7 @@ func main() {
 
 	testForStdoutRedirect()
 
-	resp, err := http.Get(url)
+	resp, err := http.Get(target)
 	if err != nil {
 		Status.Fatal(err)
 	}
