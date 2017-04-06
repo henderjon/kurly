@@ -26,8 +26,6 @@ func main() {
 		},
 	}
 
-	app.Run(os.Args)
-
 	app.Action = func(c *cli.Context) error {
 		if c.NArg() > 0 {
 			target = c.Args().Get(0)
@@ -70,4 +68,6 @@ func main() {
 		}
 		return nil
 	}
+
+	app.Run(os.Args)
 }
