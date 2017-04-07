@@ -35,6 +35,7 @@ func main() {
 	var verbose bool
 	var target string
 	var maxTime uint
+	var remoteTime bool
 
 	app := cli.NewApp()
 	app.Name = "curly"
@@ -59,6 +60,11 @@ func main() {
 			Name:        "max-time, m",
 			Usage:       "Maximum time to wait for an operation to complete in seconds",
 			Destination: &maxTime,
+		},
+		cli.BoolFlag{
+			Name:        "R",
+			Usage:       "Set the timestamp of the local file to that of the remote file, if available",
+			Destination: &remoteTime,
 		},
 	}
 
@@ -94,7 +100,6 @@ func main() {
 			if outputFile, err = os.Create(outputFilename); err != nil {
 				log.Fatalf("Error: Unable to create file '%s' for output\n", outputFilename)
 			}
-			defer outputFile.Close()
 		} else {
 			outputFile = os.Stdout
 		}
@@ -138,7 +143,19 @@ func main() {
 		}
 
 		if _, err = io.Copy(outputFile, progressR); err != nil {
-			log.Fatalf("Error: Failed to copy URL content; %s\n", err)
+			Status.Fatalf("Error: Failed to copy URL content; %s\n", err)
+		}
+
+		if outputFilename != "" {
+			outputFile.Close()
+		}
+
+		if rTime := resp.Header.Get("Last-Modified"); remoteTime && rTime != "" {
+			if t, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", rTime); err == nil {
+				if err = os.Chtimes(outputFilename, t, t); err != nil {
+					Status.Println("Error setting time", err)
+				}
+			}
 		}
 		return nil
 	}
