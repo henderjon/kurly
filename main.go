@@ -33,6 +33,7 @@ func main() {
 	var outputFilename string
 	var remoteName bool
 	var verbose bool
+	var silent bool
 	var target string
 	var maxTime uint
 	var remoteTime bool
@@ -55,6 +56,11 @@ func main() {
 			Name:        "v",
 			Usage:       "Verbose output",
 			Destination: &verbose,
+		},
+		cli.BoolFlag{
+			Name:        "silent, s",
+			Usage:       "Mute curly entirely, operation without any output",
+			Destination: &silent,
 		},
 		cli.UintFlag{
 			Name:        "max-time, m",
@@ -131,19 +137,25 @@ func main() {
 			size = 0
 		}
 
-		progressR := &ioprogress.Reader{
-			Reader: resp.Body,
-			Size:   size,
-			DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
-				return fmt.Sprintf(
-					"%s %s",
-					(ioprogress.DrawTextFormatBar(40))(progress, total),
-					ioprogress.DrawTextFormatBytes(progress, total))
-			}),
+		if !silent {
+			progressR := &ioprogress.Reader{
+				Reader: resp.Body,
+				Size:   size,
+				DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
+					return fmt.Sprintf(
+						"%s %s",
+						(ioprogress.DrawTextFormatBar(40))(progress, total),
+						ioprogress.DrawTextFormatBytes(progress, total))
+				}),
+			}
+			if _, err = io.Copy(outputFile, progressR); err != nil {
+				Status.Fatalf("Error: Failed to copy URL content; %s\n", err)
+			}
 		}
-
-		if _, err = io.Copy(outputFile, progressR); err != nil {
-			Status.Fatalf("Error: Failed to copy URL content; %s\n", err)
+		if silent {
+			if _, err = io.Copy(outputFile, resp.Body); err != nil {
+				Status.Fatalf("Error: Failed to copy URL content; %s\n", err)
+			}
 		}
 
 		if outputFilename != "" {
