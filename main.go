@@ -152,9 +152,7 @@ func main() {
 
 		if rTime := resp.Header.Get("Last-Modified"); remoteTime && rTime != "" {
 			if t, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", rTime); err == nil {
-				if err = os.Chtimes(outputFilename, t, t); err != nil {
-					Status.Println("Error setting time", err)
-				}
+				os.Chtimes(outputFilename, t, t)
 			}
 		}
 		return nil
