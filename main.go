@@ -38,7 +38,7 @@ func main() {
 	var target string
 
 	app := cli.NewApp()
-	app.Name = "working-title"
+	app.Name = "curly"
 	app.Usage = "[options] URL"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
