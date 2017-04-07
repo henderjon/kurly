@@ -3,16 +3,38 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"strconv"
+	"time"
 
-	"github.com/mitchellh/ioprogress"
+	"github.com/alsm/ioprogress"
 	"github.com/urfave/cli"
 )
 
+var (
+	client = http.Client{
+		Timeout: 120 * time.Second,
+	}
+	Status = log.New(ioutil.Discard, "", 0)
+)
+
+func init() {
+	cli.VersionFlag = cli.BoolFlag{
+		Name:  "version, V",
+		Usage: "print the version",
+	}
+}
+
 func main() {
-	var outputFile string
+	var outputFile *os.File
+	var outputFilename string
+	var remoteName bool
+	var verbose bool
 	var target string
 
 	app := cli.NewApp()
@@ -21,50 +43,89 @@ func main() {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "output, o",
-			Usage:       "output filename",
-			Destination: &outputFile,
+			Usage:       "Filename to name url content to",
+			Destination: &outputFilename,
+		},
+		cli.BoolFlag{
+			Name:        "remote-name, O",
+			Usage:       "Save output to file named with file part of URL",
+			Destination: &remoteName,
+		},
+		cli.BoolFlag{
+			Name:        "v",
+			Usage:       "Verbose output",
+			Destination: &verbose,
 		},
 	}
 
 	app.Action = func(c *cli.Context) error {
-		if c.NArg() > 0 {
-			target = c.Args().Get(0)
+		var remote *url.URL
+		var err error
+		if c.NArg() == 0 {
+			log.Fatalln("Error: no URL provided")
 		}
-		if outputFile != "" {
-			f, err := os.Create(outputFile)
-			if err != nil {
-				panic(err)
-			}
-			defer f.Close()
 
-			resp, err := http.Get(target)
-			if err != nil {
-				panic(err)
-			}
-			defer resp.Body.Close()
+		if verbose {
+			Status.SetOutput(os.Stderr)
+		}
 
-			clHeader := resp.Header.Get("Content-Length")
-			size, err := strconv.ParseInt(clHeader, 10, 64)
-			if err != nil {
-				size = 0
-			}
+		target = c.Args().Get(0)
+		if remote, err = url.Parse(target); err != nil {
+			log.Fatalf("Error: %s does not parse correctly as a URL\n", target)
+		}
 
-			progressR := &ioprogress.Reader{
-				Reader: resp.Body,
-				Size:   size,
-				DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
-					return fmt.Sprintf(
-						"%s %s",
-						(ioprogress.DrawTextFormatBar(40))(progress, total),
-						ioprogress.DrawTextFormatBytes(progress, total))
-				}),
+		if remoteName {
+			outputFilename = path.Base(target)
+		}
+		if outputFilename != "" {
+			if outputFile, err = os.Create(outputFilename); err != nil {
+				log.Fatalf("Error: Unable to create file '%s' for output\n", outputFilename)
 			}
+			defer outputFile.Close()
+		} else {
+			outputFile = os.Stdout
+		}
 
-			n, err := io.Copy(f, progressR)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf("\nwrote %d bytes\n", n)
+		req, err := http.NewRequest("GET", target, nil)
+		if err != nil {
+			log.Fatalln("Error: unable to create http request; %s", err)
+		}
+		req.Header.Set("User-Agent", "Curly_Fries/1.0")
+		req.Header.Set("Accept", "*/*")
+		req.Header.Set("Host", remote.Host)
+
+		for k, v := range req.Header {
+			Status.Println(">", k, v)
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Fatalf("Error: Unable to get URL; %s", err)
+		}
+		defer resp.Body.Close()
+
+		clHeader := resp.Header.Get("Content-Length")
+		for k, v := range resp.Header {
+			Status.Println("<", k, v)
+		}
+		size, err := strconv.ParseInt(clHeader, 10, 64)
+		if err != nil {
+			size = 0
+		}
+
+		progressR := &ioprogress.Reader{
+			Reader: resp.Body,
+			Size:   size,
+			DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
+				return fmt.Sprintf(
+					"%s %s",
+					(ioprogress.DrawTextFormatBar(40))(progress, total),
+					ioprogress.DrawTextFormatBytes(progress, total))
+			}),
+		}
+
+		if _, err = io.Copy(outputFile, progressR); err != nil {
+			log.Fatalln("Error: Failed to copy URL content; %s", err)
 		}
 		return nil
 	}
