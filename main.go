@@ -17,9 +17,7 @@ import (
 )
 
 var (
-	client = http.Client{
-		Timeout: 120 * time.Second,
-	}
+	client = http.Client{}
 	Status = log.New(ioutil.Discard, "", 0)
 )
 
@@ -36,6 +34,7 @@ func main() {
 	var remoteName bool
 	var verbose bool
 	var target string
+	var maxTime uint
 
 	app := cli.NewApp()
 	app.Name = "curly"
@@ -56,6 +55,11 @@ func main() {
 			Usage:       "Verbose output",
 			Destination: &verbose,
 		},
+		cli.UintFlag{
+			Name:        "max-time, m",
+			Usage:       "Maximum time to wait for an operation to complete in seconds",
+			Destination: &maxTime,
+		},
 	}
 
 	app.Action = func(c *cli.Context) error {
@@ -68,6 +72,14 @@ func main() {
 
 		if verbose {
 			Status.SetOutput(os.Stderr)
+		}
+
+		if maxTime > 0 {
+			go func() {
+				<-time.After(time.Duration(maxTime) * time.Second)
+				log.Fatalf("Error: Maximum operation time of %d seconds expired, aborting\n", maxTime)
+			}()
+
 		}
 
 		target = c.Args().Get(0)
@@ -89,7 +101,7 @@ func main() {
 
 		req, err := http.NewRequest("GET", target, nil)
 		if err != nil {
-			log.Fatalln("Error: unable to create http request; %s", err)
+			log.Fatalf("Error: unable to create http request; %s\n", err)
 		}
 		req.Header.Set("User-Agent", "Curly_Fries/1.0")
 		req.Header.Set("Accept", "*/*")
@@ -101,7 +113,7 @@ func main() {
 
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Fatalf("Error: Unable to get URL; %s", err)
+			log.Fatalf("Error: Unable to get URL; %s\n", err)
 		}
 		defer resp.Body.Close()
 
@@ -126,7 +138,7 @@ func main() {
 		}
 
 		if _, err = io.Copy(outputFile, progressR); err != nil {
-			log.Fatalln("Error: Failed to copy URL content; %s", err)
+			log.Fatalf("Error: Failed to copy URL content; %s\n", err)
 		}
 		return nil
 	}
