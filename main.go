@@ -62,7 +62,8 @@ func main() {
 		var remote *url.URL
 		var err error
 		if c.NArg() == 0 {
-			log.Fatalln("Error: no URL provided")
+			cli.ShowAppHelp(c)
+			os.Exit(0)
 		}
 
 		if verbose {
