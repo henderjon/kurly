@@ -8,6 +8,7 @@ import (
 
 type Options struct {
 	outputFilename string
+	fileUpload     string
 	remoteName     bool
 	verbose        bool
 	maxTime        uint
@@ -24,6 +25,11 @@ func (o *Options) getOptions(app *cli.App) {
 			Name:        "output, o",
 			Usage:       "Filename to name url content to",
 			Destination: &o.outputFilename,
+		},
+		cli.StringFlag{
+			Name:        "upload-file, T",
+			Usage:       "File to upload",
+			Destination: &o.fileUpload,
 		},
 		cli.BoolFlag{
 			Name:        "remote-name, O",

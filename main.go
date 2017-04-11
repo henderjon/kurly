@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/alsm/ioprogress"
@@ -74,6 +76,58 @@ func main() {
 			}
 		} else {
 			outputFile = os.Stdout
+		}
+
+		if opts.fileUpload != "" {
+			var (
+				tr = &http.Transport{
+					ExpectContinueTimeout: 10 * time.Second,
+				}
+				client = &http.Client{
+					Transport: tr,
+				}
+			)
+
+			f, err := os.Open(opts.fileUpload)
+			if err != nil {
+				log.Fatalf("Error opening %s\n", opts.fileUpload)
+			}
+			defer f.Close()
+
+			buf := bytes.NewBuffer(nil)
+			io.Copy(buf, f)
+
+			fi, err := f.Stat()
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			req, err := http.NewRequest("PUT", target, buf)
+			if err != nil {
+				log.Fatalf("Error with HTTP PUT request %s\n", err)
+			}
+
+			req.Header.Set("User-Agent", "Gopher_Agent/1.0")
+			req.Header.Set("Accept", "*/*")
+			req.Header.Set("Host", "httpbin.org")
+			req.Header.Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
+			req.Header.Set("Expect", "100-continue")
+
+			for k, v := range req.Header {
+				Status.Println(">", k, v)
+			}
+
+			res, err := client.Do(req)
+			if err != nil {
+				log.Fatalf("Error response from HTTP server %s\n", err)
+			}
+			fmt.Println("< Received", res.StatusCode)
+			for k, v := range res.Header {
+				Status.Println("<", k, v)
+			}
+			defer res.Body.Close()
+
+			os.Exit(0)
 		}
 
 		req, err := http.NewRequest("GET", target, nil)
