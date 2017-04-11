@@ -17,6 +17,7 @@ type Options struct {
 	maxRedirects   uint
 	redirectsTaken uint
 	silent         bool
+	method         string
 }
 
 func (o *Options) getOptions(app *cli.App) {
@@ -66,6 +67,12 @@ func (o *Options) getOptions(app *cli.App) {
 			Name:        "silent, s",
 			Usage:       "Mute curly entirely, operation without any output",
 			Destination: &o.silent,
+		},
+		cli.StringFlag{
+			Name:        "request, X",
+			Usage:       "HTTP method to use",
+			Destination: &o.method,
+			Value:       "GET",
 		},
 	}
 }
