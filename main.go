@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alsm/ioprogress"
@@ -44,6 +45,7 @@ func main() {
 		var err error
 
 		client.CheckRedirect = opts.checkRedirect
+		opts.headers = c.StringSlice("header")
 
 		if c.NArg() == 0 {
 			cli.ShowAppHelp(c)
@@ -115,7 +117,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error: unable to create http %s request; %s\n", opts.method, err)
 		}
-		req.Header.Set("User-Agent", "Curly_Fries/1.0")
+		req.Header.Set("User-Agent", opts.agent)
 		req.Header.Set("Accept", "*/*")
 		req.Header.Set("Host", remote.Host)
 		if body != nil {
@@ -134,6 +136,7 @@ func main() {
 
 			req.Header.Set("Expect", "100-continue")
 		}
+		setHeaders(req, opts.headers)
 
 		for k, v := range req.Header {
 			Status.Println(">", k, v)
@@ -185,4 +188,30 @@ func main() {
 	}
 
 	app.Run(os.Args)
+}
+
+func setHeaders(r *http.Request, h []string) {
+	for _, header := range h {
+		hParts := strings.Split(header, ": ")
+		switch len(hParts) {
+		case 0:
+			//surely not
+		case 1:
+			//must be an empty Header or a delete
+			switch {
+			case strings.HasSuffix(header, ";"):
+				r.Header.Set(strings.TrimSuffix(header, ";"), "")
+			case strings.HasSuffix(header, ":"):
+				r.Header.Del(strings.TrimSuffix(header, ":"))
+			default:
+			}
+		case 2:
+			//standard expected
+			r.Header.Set(hParts[0], hParts[1])
+		default:
+			//more than expected, use first element as Header name
+			//and rejoin the rest as header content
+			r.Header.Set(hParts[0], strings.Join(hParts[1:], ": "))
+		}
+	}
 }
