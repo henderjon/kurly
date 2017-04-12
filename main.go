@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -87,16 +86,19 @@ func main() {
 			}
 			client.Transport = tr
 
-			data, err := ioutil.ReadFile(opts.fileUpload)
+			reader, err := os.Open(opts.fileUpload)
 			if err != nil {
 				log.Fatalf("Error opening %s\n", opts.fileUpload)
 			}
-			reader := bytes.NewBuffer(data)
 
 			if !opts.silent {
+				fi, err := reader.Stat()
+				if err != nil {
+					log.Fatalf("Unable to get file stats for %v\n", opts.fileUpload)
+				}
 				body = &ioprogress.Reader{
 					Reader: reader,
-					Size:   int64(reader.Len()),
+					Size:   fi.Size(),
 					DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
 						return fmt.Sprintf(
 							"%s %s",
@@ -118,9 +120,15 @@ func main() {
 		req.Header.Set("Host", remote.Host)
 		if body != nil {
 			switch b := body.(type) {
-			case *bytes.Buffer:
-				req.Header.Set("Content-Length", strconv.FormatInt(int64(b.Len()), 10))
+			case *os.File:
+				fi, err := b.Stat()
+				if err != nil {
+					log.Fatalf("Unable to get file stats for %v\n", opts.fileUpload)
+				}
+				req.ContentLength = fi.Size()
+				req.Header.Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
 			case *ioprogress.Reader:
+				req.ContentLength = b.Size
 				req.Header.Set("Content-Length", strconv.FormatInt(b.Size, 10))
 			}
 
