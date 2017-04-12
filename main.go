@@ -91,7 +91,22 @@ func main() {
 			if err != nil {
 				log.Fatalf("Error opening %s\n", opts.fileUpload)
 			}
-			body = bytes.NewBuffer(data)
+			reader := bytes.NewBuffer(data)
+
+			if !opts.silent {
+				body = &ioprogress.Reader{
+					Reader: reader,
+					Size:   int64(reader.Len()),
+					DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
+						return fmt.Sprintf(
+							"%s %s",
+							(ioprogress.DrawTextFormatBarWithIndicator(40, '>'))(progress, total),
+							ioprogress.DrawTextFormatBytes(progress, total))
+					}),
+				}
+			} else {
+				body = reader
+			}
 		}
 
 		req, err := http.NewRequest(opts.method, target, body)
@@ -102,7 +117,13 @@ func main() {
 		req.Header.Set("Accept", "*/*")
 		req.Header.Set("Host", remote.Host)
 		if body != nil {
-			req.Header.Set("Content-Length", strconv.FormatInt(int64(body.(*bytes.Buffer).Len()), 10))
+			switch b := body.(type) {
+			case *bytes.Buffer:
+				req.Header.Set("Content-Length", strconv.FormatInt(int64(b.Len()), 10))
+			case *ioprogress.Reader:
+				req.Header.Set("Content-Length", strconv.FormatInt(b.Size, 10))
+			}
+
 			req.Header.Set("Expect", "100-continue")
 		}
 
@@ -129,7 +150,7 @@ func main() {
 				DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
 					return fmt.Sprintf(
 						"%s %s",
-						(ioprogress.DrawTextFormatBar(40))(progress, total),
+						(ioprogress.DrawTextFormatBarWithIndicator(40, '<'))(progress, total),
 						ioprogress.DrawTextFormatBytes(progress, total))
 				}),
 			}
