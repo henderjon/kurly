@@ -20,6 +20,7 @@ type Options struct {
 	method         string
 	headers        []string
 	agent          string
+	expectTimeout  uint
 }
 
 func (o *Options) getOptions(app *cli.App) {
@@ -85,6 +86,12 @@ func (o *Options) getOptions(app *cli.App) {
 		cli.StringSliceFlag{
 			Name:  "header, H",
 			Usage: "Extra headers to be sent with the request",
+		},
+		cli.UintFlag{
+			Name:        "expect100-timeout",
+			Usage:       "Timeout in seconds for Expect: 100-continue wait period",
+			Destination: &o.expectTimeout,
+			Value:       10,
 		},
 	}
 }

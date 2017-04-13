@@ -84,7 +84,7 @@ func main() {
 			opts.method = "PUT"
 
 			tr := &http.Transport{
-				ExpectContinueTimeout: 10 * time.Second,
+				ExpectContinueTimeout: time.Duration(opts.expectTimeout) * time.Second,
 			}
 			client.Transport = tr
 
