@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/alsm/ioprogress"
-	"github.com/urfave/cli"
+	"github.com/davidjpeacock/cli"
 )
 
 var (
