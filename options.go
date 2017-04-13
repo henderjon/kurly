@@ -91,7 +91,7 @@ func (o *Options) getOptions(app *cli.App) {
 			Name:        "expect100-timeout",
 			Usage:       "Timeout in seconds for Expect: 100-continue wait period",
 			Destination: &o.expectTimeout,
-			Value:       10,
+			Value:       1,
 		},
 	}
 }
