@@ -68,6 +68,10 @@ func main() {
 		if remote, err = url.Parse(target); err != nil {
 			log.Fatalf("Error: %s does not parse correctly as a URL\n", target)
 		}
+		if remote.Scheme == "" {
+			remote.Scheme = "http"
+			remote, _ = url.Parse(remote.String())
+		}
 
 		if opts.remoteName {
 			opts.outputFilename = path.Base(target)
@@ -113,7 +117,7 @@ func main() {
 			}
 		}
 
-		req, err := http.NewRequest(opts.method, target, body)
+		req, err := http.NewRequest(opts.method, remote.String(), body)
 		if err != nil {
 			log.Fatalf("Error: unable to create http %s request; %s\n", opts.method, err)
 		}
