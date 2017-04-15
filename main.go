@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"path"
@@ -67,6 +69,16 @@ func main() {
 		target = c.Args().Get(0)
 		if remote, err = url.Parse(target); err != nil {
 			log.Fatalf("Error: %s does not parse correctly as a URL\n", target)
+		}
+
+		if opts.cookie != "" || opts.cookieJar != "" {
+			client.Jar, err = cookiejar.New(nil)
+			if err != nil {
+				log.Fatalf("Unable to create cookie jar; %s", err)
+			}
+			if opts.cookie != "" {
+				client.Jar.SetCookies(remote, readCookies(opts.cookie))
+			}
 		}
 
 		if opts.remoteName {
@@ -179,6 +191,16 @@ func main() {
 			outputFile.Close()
 		}
 
+		if opts.cookieJar != "" && len(client.Jar.Cookies(remote)) != 0 {
+			cookieData, err := json.MarshalIndent(client.Jar.Cookies(remote), "", "  ")
+			if err != nil {
+				Status.Fatalf("Failed to marshal cookiejar to JSON; %s", err)
+			}
+			if err = ioutil.WriteFile(opts.cookieJar, cookieData, 0); err != nil {
+				Status.Fatalf("Failed to write cookiejar to file %s; %s", opts.cookieJar, err)
+			}
+		}
+
 		if rTime := resp.Header.Get("Last-Modified"); opts.remoteTime && rTime != "" {
 			if t, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", rTime); err == nil {
 				os.Chtimes(opts.outputFilename, t, t)
@@ -214,4 +236,28 @@ func setHeaders(r *http.Request, h []string) {
 			r.Header.Set(hParts[0], strings.Join(hParts[1:], ": "))
 		}
 	}
+}
+
+func readCookies(c string) (cookies []*http.Cookie) {
+	if !strings.Contains(c, "=") {
+		f, err := os.Open(c)
+		if err != nil {
+			log.Fatalf("Failed to open cookie file %s; %s", c, err)
+		}
+		decoder := json.NewDecoder(f)
+		err = decoder.Decode(&cookies)
+		if err != nil {
+			log.Fatalf("Failed to read/decode cookie file; %s", err)
+		}
+		return
+	}
+	for _, cookie := range strings.Split(c, ";") {
+		parts := strings.SplitN(cookie, "=", 2)
+		c := &http.Cookie{
+			Name:  parts[0],
+			Value: parts[1],
+		}
+		cookies = append(cookies, c)
+	}
+	return
 }

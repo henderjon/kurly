@@ -21,6 +21,8 @@ type Options struct {
 	headers        []string
 	agent          string
 	expectTimeout  uint
+	cookie         string
+	cookieJar      string
 }
 
 func (o *Options) getOptions(app *cli.App) {
@@ -92,6 +94,16 @@ func (o *Options) getOptions(app *cli.App) {
 			Usage:       "Timeout in seconds for Expect: 100-continue wait period",
 			Destination: &o.expectTimeout,
 			Value:       1,
+		},
+		cli.StringFlag{
+			Name:        "cookie, b",
+			Usage:       "cookie data or file to read cookie data from",
+			Destination: &o.cookie,
+		},
+		cli.StringFlag{
+			Name:        "cookie-jar, c",
+			Usage:       "file to save cookies to",
+			Destination: &o.cookieJar,
 		},
 	}
 }
