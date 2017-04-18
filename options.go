@@ -1,7 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/davidjpeacock/cli"
 )
@@ -21,6 +26,11 @@ type Options struct {
 	headers        []string
 	agent          string
 	expectTimeout  uint
+	data           []string
+	dataAscii      []string
+	dataRaw        []string
+	dataBinary     []string
+	dataURLEncode  []string
 }
 
 func (o *Options) getOptions(app *cli.App) {
@@ -93,6 +103,26 @@ func (o *Options) getOptions(app *cli.App) {
 			Destination: &o.expectTimeout,
 			Value:       1,
 		},
+		cli.StringSliceFlag{
+			Name:  "data, d",
+			Usage: "Sends the specified data in a POST request to the server",
+		},
+		cli.StringSliceFlag{
+			Name:  "data-ascii",
+			Usage: "The same as --data, -d",
+		},
+		cli.StringSliceFlag{
+			Name:  "data-raw",
+			Usage: "Basically the same as --data-binary (no @ interpretation)",
+		},
+		cli.StringSliceFlag{
+			Name:  "data-binary",
+			Usage: "Sends the data as binary",
+		},
+		cli.StringSliceFlag{
+			Name:  "data-urlencode",
+			Usage: "Sends the data as urlencoded ascii",
+		},
 	}
 }
 
@@ -104,4 +134,35 @@ func (o *Options) checkRedirect(req *http.Request, via []*http.Request) error {
 	}
 
 	return nil
+}
+
+func (o *Options) ProcessData() {
+	var uriEncodes url.Values
+	for _, d := range o.dataAscii {
+		parts := strings.SplitN(d, "=", 2)
+		if strings.HasPrefix(parts[1], "@") {
+			data, err := ioutil.ReadFile(strings.TrimPrefix(parts[1], "@"))
+			if err != nil {
+				log.Fatalf("Unable to read file %s for data element %s\n", strings.TrimPrefix(parts[1], "@"), parts[0])
+			}
+			data = []byte(strings.Replace(string(data), "\r", "", -1))
+			data = []byte(strings.Replace(string(data), "\n", "", -1))
+			o.data = append(o.data, fmt.Sprintf("%s=%s", parts[0], string(data)))
+		}
+	}
+	for _, d := range o.dataRaw {
+		parts := strings.SplitN(d, "=", 2)
+		o.data = append(o.data, fmt.Sprintf("%s=%s", parts[0], parts[1]))
+	}
+	for _, d := range o.dataBinary {
+		parts := strings.SplitN(d, "=", 2)
+		o.data = append(o.data, fmt.Sprintf("%s=%s", parts[0], parts[1]))
+	}
+	for _, d := range o.dataURLEncode {
+		parts := strings.SplitN(d, "=", 2)
+		uriEncodes.Add(parts[0], parts[1])
+	}
+	if len(uriEncodes) > 0 {
+		o.data = append(o.data, uriEncodes.Encode())
+	}
 }

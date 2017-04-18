@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -46,6 +47,13 @@ func main() {
 
 		client.CheckRedirect = opts.checkRedirect
 		opts.headers = c.StringSlice("header")
+		opts.dataAscii = c.StringSlice("data")
+		opts.dataAscii = append(opts.dataAscii, c.StringSlice("data-ascii")...)
+		opts.dataBinary = c.StringSlice("data-binary")
+		opts.dataRaw = c.StringSlice("data-raw")
+		opts.dataURLEncode = c.StringSlice("data-urlencode")
+
+		opts.ProcessData()
 
 		if c.NArg() == 0 {
 			cli.ShowAppHelp(c)
@@ -117,7 +125,38 @@ func main() {
 			}
 		}
 
-		req, err := http.NewRequest(opts.method, remote.String(), body)
+		if len(opts.data) > 0 {
+			var data bytes.Buffer
+			opts.method = "POST"
+
+			tr := &http.Transport{
+				ExpectContinueTimeout: 10 * time.Second,
+			}
+			client.Transport = tr
+
+			for i, d := range opts.data {
+				data.WriteString(d)
+				if i < len(opts.data)-1 {
+					data.WriteRune('&')
+				}
+			}
+			if !opts.silent {
+				body = &ioprogress.Reader{
+					Reader: &data,
+					Size:   int64(data.Len()),
+					DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
+						return fmt.Sprintf(
+							"%s %s",
+							(ioprogress.DrawTextFormatBarWithIndicator(40, '>'))(progress, total),
+							ioprogress.DrawTextFormatBytes(progress, total))
+					}),
+				}
+			} else {
+				body = &data
+			}
+		}
+
+		req, err := http.NewRequest(opts.method, target, body)
 		if err != nil {
 			log.Fatalf("Error: unable to create http %s request; %s\n", opts.method, err)
 		}
@@ -136,6 +175,8 @@ func main() {
 			case *ioprogress.Reader:
 				req.ContentLength = b.Size
 				req.Header.Set("Content-Length", strconv.FormatInt(b.Size, 10))
+			case *bytes.Buffer:
+				req.Header.Set("Content-Length", strconv.FormatInt(int64(b.Len()), 10))
 			}
 
 			req.Header.Set("Expect", "100-continue")
