@@ -137,20 +137,7 @@ func main() {
 					data.WriteRune('&')
 				}
 			}
-			if !opts.silent {
-				body = &ioprogress.Reader{
-					Reader: &data,
-					Size:   int64(data.Len()),
-					DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
-						return fmt.Sprintf(
-							"%s %s",
-							(ioprogress.DrawTextFormatBarWithIndicator(40, '>'))(progress, total),
-							ioprogress.DrawTextFormatBytes(progress, total))
-					}),
-				}
-			} else {
-				body = &data
-			}
+			body = &data
 		}
 
 		req, err := http.NewRequest(opts.method, target, body)
@@ -231,7 +218,6 @@ func main() {
 }
 
 func setHeaders(r *http.Request, h []string) {
-	fmt.Println(h)
 	for _, header := range h {
 		hParts := strings.Split(header, ": ")
 		switch len(hParts) {
