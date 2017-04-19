@@ -165,6 +165,7 @@ func main() {
 		}
 		setHeaders(req, opts.headers)
 
+		Status.Println(">", req.Method, req.URL.Path, req.Proto)
 		for k, v := range req.Header {
 			Status.Println(">", k, v)
 		}
