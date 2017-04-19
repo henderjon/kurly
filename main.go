@@ -99,6 +99,7 @@ func main() {
 				ExpectContinueTimeout: time.Duration(opts.expectTimeout) * time.Second,
 			}
 			client.Transport = tr
+			opts.headers = append(opts.headers, "Expect: 100-continue")
 
 			reader, err := os.Open(opts.fileUpload)
 			if err != nil {
@@ -128,11 +129,7 @@ func main() {
 		if len(opts.data) > 0 {
 			var data bytes.Buffer
 			opts.method = "POST"
-
-			tr := &http.Transport{
-				ExpectContinueTimeout: 10 * time.Second,
-			}
-			client.Transport = tr
+			opts.headers = append(opts.headers, "Content-Type: application/x-www-form-urlencoded")
 
 			for i, d := range opts.data {
 				data.WriteString(d)
@@ -178,8 +175,6 @@ func main() {
 			case *bytes.Buffer:
 				req.Header.Set("Content-Length", strconv.FormatInt(int64(b.Len()), 10))
 			}
-
-			req.Header.Set("Expect", "100-continue")
 		}
 		setHeaders(req, opts.headers)
 
@@ -236,6 +231,7 @@ func main() {
 }
 
 func setHeaders(r *http.Request, h []string) {
+	fmt.Println(h)
 	for _, header := range h {
 		hParts := strings.Split(header, ": ")
 		switch len(hParts) {

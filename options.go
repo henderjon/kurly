@@ -140,6 +140,10 @@ func (o *Options) ProcessData() {
 	var uriEncodes url.Values
 	for _, d := range o.dataAscii {
 		parts := strings.SplitN(d, "=", 2)
+		if len(parts) == 1 {
+			o.data = append(o.data, d)
+			continue
+		}
 		if strings.HasPrefix(parts[1], "@") {
 			data, err := ioutil.ReadFile(strings.TrimPrefix(parts[1], "@"))
 			if err != nil {
@@ -148,6 +152,8 @@ func (o *Options) ProcessData() {
 			data = []byte(strings.Replace(string(data), "\r", "", -1))
 			data = []byte(strings.Replace(string(data), "\n", "", -1))
 			o.data = append(o.data, fmt.Sprintf("%s=%s", parts[0], string(data)))
+		} else {
+			o.data = append(o.data, d)
 		}
 	}
 	for _, d := range o.dataRaw {
