@@ -23,6 +23,6 @@ func TestSetHeaders(t *testing.T) {
 			}
 		}
 	} else {
-		t.Error("No header passed to setHeaders")
+		t.Error("setHeaders() set no header")
 	}
 }
