@@ -30,11 +30,11 @@ func init() {
 	}
 }
 
+var body io.Reader
+
 func main() {
 	var target string
-	var outputFile *os.File
 	var opts Options
-	var body io.Reader
 
 	app := cli.NewApp()
 	app.Name = "curly"
@@ -65,11 +65,7 @@ func main() {
 		}
 
 		if opts.maxTime > 0 {
-			go func() {
-				<-time.After(time.Duration(opts.maxTime) * time.Second)
-				log.Fatalf("Error: Maximum operation time of %d seconds expired, aborting\n", opts.maxTime)
-			}()
-
+			maxTime(opts.maxTime)
 		}
 
 		target = c.Args().Get(0)
@@ -84,46 +80,11 @@ func main() {
 		if opts.remoteName {
 			opts.outputFilename = path.Base(target)
 		}
-		if opts.outputFilename != "" {
-			if outputFile, err = os.Create(opts.outputFilename); err != nil {
-				log.Fatalf("Error: Unable to create file '%s' for output\n", opts.outputFilename)
-			}
-		} else {
-			outputFile = os.Stdout
-		}
+
+		outputFile := opts.openOutputFile()
 
 		if opts.fileUpload != "" {
-			opts.method = "PUT"
-
-			tr := &http.Transport{
-				ExpectContinueTimeout: time.Duration(opts.expectTimeout) * time.Second,
-			}
-			client.Transport = tr
-			opts.headers = append(opts.headers, "Expect: 100-continue")
-
-			reader, err := os.Open(opts.fileUpload)
-			if err != nil {
-				log.Fatalf("Error opening %s\n", opts.fileUpload)
-			}
-
-			if !opts.silent {
-				fi, err := reader.Stat()
-				if err != nil {
-					log.Fatalf("Unable to get file stats for %v\n", opts.fileUpload)
-				}
-				body = &ioprogress.Reader{
-					Reader: reader,
-					Size:   fi.Size(),
-					DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
-						return fmt.Sprintf(
-							"%s %s",
-							(ioprogress.DrawTextFormatBarWithIndicator(40, '>'))(progress, total),
-							ioprogress.DrawTextFormatBytes(progress, total))
-					}),
-				}
-			} else {
-				body = reader
-			}
+			opts.uploadFile()
 		}
 
 		if len(opts.data) > 0 {
@@ -242,4 +203,11 @@ func setHeaders(r *http.Request, h []string) {
 			r.Header.Set(hParts[0], strings.Join(hParts[1:], ": "))
 		}
 	}
+}
+
+func maxTime(maxTime uint) {
+	go func() {
+		<-time.After(time.Duration(maxTime) * time.Second)
+		log.Fatalf("Error: Maximum operation time of %d seconds expired, aborting\n", maxTime)
+	}()
 }

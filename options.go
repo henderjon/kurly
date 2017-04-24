@@ -6,8 +6,11 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 
+	"github.com/alsm/ioprogress"
 	"github.com/davidjpeacock/cli"
 )
 
@@ -170,5 +173,52 @@ func (o *Options) ProcessData() {
 	}
 	if len(uriEncodes) > 0 {
 		o.data = append(o.data, uriEncodes.Encode())
+	}
+}
+
+func (opts *Options) openOutputFile() *os.File {
+	var err error
+	var outputFile *os.File
+	if opts.outputFilename != "" {
+		if outputFile, err = os.Create(opts.outputFilename); err != nil {
+			log.Fatalf("Error: Unable to create file '%s' for output\n", opts.outputFilename)
+		}
+	} else {
+		outputFile = os.Stdout
+	}
+	return outputFile
+}
+
+func (opts *Options) uploadFile() {
+	opts.method = "PUT"
+
+	tr := &http.Transport{
+		ExpectContinueTimeout: time.Duration(opts.expectTimeout) * time.Second,
+	}
+	client.Transport = tr
+	opts.headers = append(opts.headers, "Expect: 100-continue")
+
+	reader, err := os.Open(opts.fileUpload)
+	if err != nil {
+		log.Fatalf("Error opening %s\n", opts.fileUpload)
+	}
+
+	if !opts.silent {
+		fi, err := reader.Stat()
+		if err != nil {
+			log.Fatalf("Unable to get file stats for %v\n", opts.fileUpload)
+		}
+		body = &ioprogress.Reader{
+			Reader: reader,
+			Size:   fi.Size(),
+			DrawFunc: ioprogress.DrawTerminalf(os.Stderr, func(progress, total int64) string {
+				return fmt.Sprintf(
+					"%s %s",
+					(ioprogress.DrawTextFormatBarWithIndicator(40, '>'))(progress, total),
+					ioprogress.DrawTextFormatBytes(progress, total))
+			}),
+		}
+	} else {
+		body = reader
 	}
 }
