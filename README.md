@@ -81,7 +81,7 @@ love you to help.
 
 ## Contributing
 
-Bug reports, feature requests, and pull request are all welcome.
+Bug reports, feature requests, and pull requests are all welcome.
 
 ## License
 
