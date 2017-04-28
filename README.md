@@ -26,10 +26,10 @@ you can simply:
 Binaries are provided for the following platforms, download here and rename
 as appropriate.
 
-* [Mac OS X amd64](binaries/curly-osx-amd64.bin)
-* [Linux amd64](binaries/curly-linux-amd64.bin)
-* [Linux arm](binaries/curly-linux-arm.bin)
-* [Windows amd64](binaries/curly.exe-windows-amd64.bin)
+* [Linux amd64](https://github.com/davidjpeacock/curly/releases/download/untagged-31c3ab9c5e97121cd366/curly-linux-amd64-v1.0.0.tar.gz)
+* [Linux arm](https://github.com/davidjpeacock/curly/releases/download/untagged-31c3ab9c5e97121cd366/curly-linux-arm-v1.0.0.tar.gz)
+* [Mac OS X amd64](https://github.com/davidjpeacock/curly/releases/download/untagged-31c3ab9c5e97121cd366/curly-osx-amd64-v1.0.0.tar.gz)
+* [Windows amd64](https://github.com/davidjpeacock/curly/releases/download/untagged-31c3ab9c5e97121cd366/curly-windows-amd64-v1.0.0.zip)
 
 ## Usage
 
