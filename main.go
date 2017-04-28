@@ -39,6 +39,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "curly"
 	app.Usage = "[options] URL"
+	app.Version = "1.0.0"
 	opts.getOptions(app)
 
 	app.Action = func(c *cli.Context) error {
