@@ -23,8 +23,7 @@ you can simply:
 
 ## Binary download
 
-Binaries are provided for the following platforms, download here and rename
-as appropriate.
+Binaries are provided for the following platforms:
 
 * [Linux amd64](https://github.com/davidjpeacock/curly/releases/download/untagged-31c3ab9c5e97121cd366/curly-linux-amd64-v1.0.0.tar.gz)
 * [Linux arm](https://github.com/davidjpeacock/curly/releases/download/untagged-31c3ab9c5e97121cd366/curly-linux-arm-v1.0.0.tar.gz)
