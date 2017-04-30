@@ -25,10 +25,10 @@ you can simply:
 
 Binaries are provided for the following platforms:
 
-* [Linux amd64](https://github.com/davidjpeacock/kurly/releases/download/untagged-31c3ab9c5e97121cd366/kurly-linux-amd64-v1.0.0.tar.gz)
-* [Linux arm](https://github.com/davidjpeacock/kurly/releases/download/untagged-31c3ab9c5e97121cd366/kurly-linux-arm-v1.0.0.tar.gz)
-* [Mac OS X amd64](https://github.com/davidjpeacock/kurly/releases/download/untagged-31c3ab9c5e97121cd366/kurly-osx-amd64-v1.0.0.tar.gz)
-* [Windows amd64](https://github.com/davidjpeacock/kurly/releases/download/untagged-31c3ab9c5e97121cd366/kurly-windows-amd64-v1.0.0.zip)
+* [Linux amd64](https://github.com/davidjpeacock/kurly/releases/download/untagged-e1bc439c6e5662bb44f6/kurly-linux-amd64-v1.0.0.tar.gz)
+* [Linux arm](https://github.com/davidjpeacock/kurly/releases/download/untagged-e1bc439c6e5662bb44f6/kurly-linux-arm-v1.0.0.tar.gz)
+* [Mac OS X amd64](https://github.com/davidjpeacock/kurly/releases/download/untagged-e1bc439c6e5662bb44f6/kurly-osx-amd64-v1.0.0.tar.gz)
+* [Windows amd64](https://github.com/davidjpeacock/kurly/releases/download/untagged-e1bc439c6e5662bb44f6/kurly-windows-amd64-v1.0.0.zip)
 
 ## Usage
 
