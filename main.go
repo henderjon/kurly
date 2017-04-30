@@ -37,7 +37,7 @@ func main() {
 	var opts Options
 
 	app := cli.NewApp()
-	app.Name = "curly"
+	app.Name = "kurly"
 	app.Usage = "[options] URL"
 	app.Version = "1.0.0"
 	opts.getOptions(app)

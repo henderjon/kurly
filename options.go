@@ -81,7 +81,7 @@ func (o *Options) getOptions(app *cli.App) {
 		},
 		cli.BoolFlag{
 			Name:        "silent, s",
-			Usage:       "Mute curly entirely, operation without any output",
+			Usage:       "Mute kurly entirely, operation without any output",
 			Destination: &o.silent,
 		},
 		cli.StringFlag{
@@ -94,7 +94,7 @@ func (o *Options) getOptions(app *cli.App) {
 			Name:        "user-agent, A",
 			Usage:       "User agent to set for this request",
 			Destination: &o.agent,
-			Value:       "Curly_Fries/1.0",
+			Value:       "Kurly/1.0",
 		},
 		cli.StringSliceFlag{
 			Name:  "header, H",
