@@ -132,6 +132,10 @@ func main() {
 			Status.Println(">", k, v)
 		}
 
+		Status.Println("\n")
+		Status.Println(body)
+		Status.Println("")
+
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Fatalf("Error: Unable to get URL; %s\n", err)
@@ -144,7 +148,10 @@ func main() {
 			Status.Println("<", k, v)
 		}
 
+		Status.Println("\n")
+
 		if !opts.silent {
+
 			progressR := &ioprogress.Reader{
 				Reader: resp.Body,
 				Size:   resp.ContentLength,
@@ -178,6 +185,7 @@ func main() {
 	}
 
 	app.Run(os.Args)
+	Status.Println("")
 }
 
 func setHeaders(r *http.Request, h []string) {
